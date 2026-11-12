@@ -16,7 +16,7 @@ struct SettingsView: View {
                     Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 44, height: 44)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("notchjam").font(.title2.weight(.semibold))
-                        Text("get lost in the lyrics, not your workflow.").foregroundStyle(.secondary)
+                        Text("peek at the lyrics. keep the groove.").foregroundStyle(.secondary)
                     }
                 }
             }

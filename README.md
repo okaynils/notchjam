@@ -1,8 +1,10 @@
 # notchjam
 
-**get lost in the lyrics, not your workflow.**
+**peek at the lyrics. keep the groove.**
 
-A small native macOS menu-bar app. Double-tap **left Option** to peek at Spotify’s synchronized lyrics, then return to what you were doing. The black panel appears below the notch, or at the top center of a display without one. It never takes keyboard focus.
+[notchjam.nils.me](https://notchjam.nils.me)
+
+A tiny, free macOS menu-bar app for people who sing at their desk. Music on while you work and the chorus hits? Double-tap **left Option** and Spotify’s synced lyrics drop out of your notch. Sing along, tap again, and they’re gone. The black panel appears below the notch, or at the top center of a display without one. It never takes keyboard focus.
 
 ![The actual SwiftUI lyrics panel, rendered with original demo lyrics](docs/panel.png)
 

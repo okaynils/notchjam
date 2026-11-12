@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "notchjam")
         item.button?.image?.isTemplate = true
-        item.button?.toolTip = "notchjam — get lost in the lyrics, not your workflow."
+        item.button?.toolTip = "notchjam — peek at the lyrics. keep the groove."
         let menu = NSMenu()
         menu.delegate = self
         item.menu = menu

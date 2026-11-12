@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>notchjam</title>
+<meta name="description" content="A tiny Mac app that shows Spotify's synced lyrics under your notch when you double-tap Option.">
+<meta property="og:title" content="notchjam">
+<meta property="og:description" content="A tiny Mac app that shows Spotify's synced lyrics under your notch when you double-tap Option.">
+<meta property="og:image" content="https://notchjam.nils.me/og.png">
+<meta property="og:url" content="https://notchjam.nils.me/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+:root {
+  --bg: #fbfaf7;
+  --fg: #161616;
+  --muted: #6a6a66;
+  --line: rgba(20, 20, 20, 0.1);
+  --accent: #e8502b;
+  --code-bg: #f0eee9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d0d0e;
+    --fg: #eeede9;
+    --muted: #9a9994;
+    --line: rgba(255, 255, 255, 0.1);
+    --accent: #ff7a52;
+    --code-bg: #19191b;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 17px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main { max-width: 680px; margin: 0 auto; padding: 48px 16px 40px; }
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--line); }
+a:hover { text-decoration-color: currentColor; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.name { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0; }
+.name img { width: 40px; height: 40px; border-radius: 10px; }
+.gh { display: inline-flex; align-items: center; gap: 7px; font-size: 15px; color: var(--muted); text-decoration: none; }
+.gh:hover { color: var(--fg); }
+.gh svg { width: 17px; height: 17px; }
+.intro { font-size: clamp(22px, 4vw, 27px); line-height: 1.35; letter-spacing: -0.015em; font-weight: 550; margin: 36px 0 0; text-wrap: pretty; }
+.caption { font-size: 14px; color: var(--muted); text-align: center; margin: 0; }
+h2 { font-size: 15px; font-weight: 650; text-transform: lowercase; letter-spacing: 0; color: var(--accent); margin: 52px 0 10px; }
+p { margin: 0 0 14px; text-wrap: pretty; }
+.muted { color: var(--muted); }
+ul { margin: 0; padding-left: 20px; }
+li { margin: 0 0 8px; }
+li::marker { color: var(--muted); }
+kbd {
+  font: 600 14px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 2px 6px; border-radius: 5px; border: 1px solid var(--line); white-space: nowrap;
+}
+pre {
+  margin: 0 0 14px; background: var(--code-bg); border-radius: 10px; padding: 14px 16px;
+  font: 13.5px/1.65 ui-monospace, "SF Mono", Menlo, monospace; overflow-x: auto;
+}
+ol { margin: 0; padding-left: 22px; }
+ol li { margin-bottom: 14px; }
+footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+
+/* Mac mock */
+.stage { margin: 36px 0 10px; }
+.screen-wrap { container-type: inline-size; }
+.screen {
+  --u: calc(100cqw / 960);
+  position: relative; aspect-ratio: 16 / 10; overflow: hidden;
+  border-radius: calc(18 * var(--u));
+  border: calc(9 * var(--u)) solid #0d0d0d;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 40px 80px -30px rgba(40, 10, 0, .45), 0 0 0 1px rgba(0,0,0,.25);
+  background:
+    radial-gradient(60% 80% at 15% 100%, #ff9a5a 0%, transparent 60%),
+    radial-gradient(55% 70% at 90% 90%, #c9399b 0%, transparent 60%),
+    radial-gradient(70% 70% at 60% 10%, #5b3bd6 0%, transparent 65%),
+    linear-gradient(160deg, #2a1b5e, #e2546b);
+  text-align: left;
+}
+.menubar {
+  position: absolute; inset: 0 0 auto 0; height: calc(32 * var(--u));
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 calc(16 * var(--u));
+  background: rgba(255,255,255,.16); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  color: rgba(255,255,255,.92); font-size: calc(12.5 * var(--u)); font-weight: 500;
+}
+.menubar .left, .menubar .right { display: flex; align-items: center; gap: calc(17 * var(--u)); }
+.menubar .left b { font-weight: 700; }
+.menubar svg { width: calc(15 * var(--u)); height: calc(15 * var(--u)); display: block; }
+.notch {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: calc(190 * var(--u)); height: calc(32 * var(--u));
+  background: #000; border-radius: 0 0 calc(12 * var(--u)) calc(12 * var(--u));
+  z-index: 3;
+}
+.editor {
+  position: absolute; left: calc(110 * var(--u)); right: calc(110 * var(--u));
+  top: calc(98 * var(--u)); bottom: calc(34 * var(--u));
+  background: rgba(24, 24, 28, .9); border-radius: calc(12 * var(--u));
+  box-shadow: 0 calc(20 * var(--u)) calc(50 * var(--u)) rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.08) inset;
+  padding: calc(14 * var(--u)) calc(18 * var(--u));
+  overflow: hidden;
+}
+.lights { display: flex; gap: calc(7 * var(--u)); margin-bottom: calc(26 * var(--u)); }
+.lights i { width: calc(11 * var(--u)); height: calc(11 * var(--u)); border-radius: 50%; background: #ff5f57; }
+.lights i:nth-child(2) { background: #febc2e; }
+.lights i:nth-child(3) { background: #28c840; }
+.code { display: grid; gap: calc(11 * var(--u)); padding-left: calc(30 * var(--u)); }
+.code i { display: block; height: calc(9 * var(--u)); border-radius: 99px; background: rgba(255,255,255,.12); }
+.code i.k { background: rgba(255, 138, 92, .45); }
+.code i.s { background: rgba(140, 200, 255, .35); }
+.caret { width: calc(2 * var(--u)) !important; height: calc(15 * var(--u)) !important; background: #fff !important; border-radius: 0 !important; animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Lyrics panel — mirrors notchjam/UI/LyricsView.swift */
+.panel {
+  position: absolute; top: 0; left: 50%; z-index: 2;
+  width: calc(440 * var(--u)); margin-left: calc(-220 * var(--u));
+  background: #000; color: #fff;
+  border-radius: calc(5 * var(--u)) calc(5 * var(--u)) calc(24 * var(--u)) calc(24 * var(--u));
+  padding: calc(32 * var(--u)) calc(24 * var(--u)) calc(15 * var(--u));
+  transform-origin: top center;
+  transform: scale(.48, .03); opacity: 0;
+  transition: transform .2s ease-in-out, opacity .2s ease-in-out;
+  box-shadow: 0 calc(18 * var(--u)) calc(40 * var(--u)) rgba(0,0,0,.35);
+}
+.panel.open { transform: none; opacity: 1; transition: transform .42s cubic-bezier(.22, 1, .36, 1), opacity .18s ease-out; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; height: calc(30 * var(--u)); margin-top: calc(16 * var(--u)); }
+.panel-head .t { font-size: calc(12 * var(--u)); font-weight: 500; color: rgba(255,255,255,.8); line-height: 1.25; }
+.panel-head .a { font-size: calc(11 * var(--u)); color: rgba(255,255,255,.4); }
+.panel-head .icons { display: flex; gap: calc(11 * var(--u)); color: rgba(255,255,255,.5); }
+.panel-head svg { width: calc(11 * var(--u)); height: calc(11 * var(--u)); display: block; }
+.lyrics { display: grid; gap: calc(12 * var(--u)); text-align: center; margin: calc(18 * var(--u)) 0 calc(16 * var(--u)); }
+.lyrics p { margin: 0; font-size: calc(14 * var(--u)); color: rgba(255,255,255,.32); min-height: calc(18 * var(--u)); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lyrics p.now { font-size: calc(21 * var(--u)); font-weight: 650; color: rgba(255,255,255,.98); min-height: calc(50 * var(--u)); display: grid; place-items: center; letter-spacing: -0.01em; }
+.panel-foot { display: flex; justify-content: space-between; font-size: calc(9 * var(--u)); color: rgba(255,255,255,.25); }
+
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="name"><img src="icon.png" alt="">notchjam</p>
+    <a class="gh" href="https://github.com/okaynils/notchjam"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+  </header>
+
+  <p class="intro">A tiny Mac app that shows Spotify’s synced lyrics under your notch when you double‑tap <kbd>⌥</kbd>&nbsp;Option.</p>
+
+  <div class="stage" aria-label="Animation: the lyrics panel slides out of the notch over a code editor, shows a few lines, then hides again">
+    <div class="screen-wrap">
+        <div class="screen">
+          <div class="menubar" aria-hidden="true">
+            <div class="left"><b>Code</b><span>File</span><span>Edit</span><span>View</span></div>
+            <div class="right">
+              <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="6" width="2" height="4" rx="1"/><rect x="4.5" y="3" width="2" height="10" rx="1"/><rect x="8" y="1" width="2" height="14" rx="1"/><rect x="11.5" y="4" width="2" height="8" rx="1"/><rect x="15" y="6.5" width="1" height="3" rx=".5"/></svg>
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 6a9.5 9.5 0 0 1 13 0M4 8.7a6 6 0 0 1 8 0M6.5 11.3a2.4 2.4 0 0 1 3 0"/></svg>
+              <span>Thu 3:14 PM</span>
+            </div>
+          </div>
+          <div class="notch" aria-hidden="true"></div>
+          <div class="panel" id="panel" aria-hidden="true">
+            <div class="panel-head">
+              <div><div class="t">Nobody’s on mute</div><div class="a">The Notch Band</div></div>
+              <div class="icons">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 1.5 14.5 6M6 4.5l5.5 5.5M4 12l-2.5 2.5M5.2 4.4 11.6 10.8 9.5 12.9 3.1 6.5z"/></svg>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 3l10 10M13 3 3 13"/></svg>
+              </div>
+            </div>
+            <div class="lyrics" id="lyrics">
+              <p id="l-prev">&nbsp;</p>
+              <p class="now" id="l-now">♪</p>
+              <p id="l-next">&nbsp;</p>
+            </div>
+            <div class="panel-foot"><span>lyrics by LRCLIB</span><span>⌥ ⌥ to hide</span></div>
+          </div>
+          <div class="editor" aria-hidden="true">
+            <div class="lights"><i></i><i></i><i></i></div>
+            <div class="code">
+              <i class="k" style="width:22%"></i>
+              <i style="width:48%;margin-left:6%"></i>
+              <i class="s" style="width:36%;margin-left:6%"></i>
+              <i style="width:58%;margin-left:12%"></i>
+              <i class="k" style="width:30%;margin-left:12%"></i>
+              <i style="width:44%;margin-left:6%"></i>
+              <i style="width:8%"></i>
+              <i style="width:0;opacity:0"></i>
+              <i class="k" style="width:28%"></i>
+              <i class="s" style="width:52%;margin-left:6%"></i>
+              <i style="width:38%;margin-left:6%"></i>
+              <i class="caret" style="margin-left:6%"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+  <p class="caption">double‑tap left ⌥ → lyrics. double‑tap again → gone.</p>
+
+  <h2>the problem</h2>
+  <p>You’re working with music on. The chorus comes in, you want to sing along, and you don’t actually know the words. Getting them means switching to Spotify, opening the lyrics view, and then finding your way back to whatever you were doing.</p>
+  <p>Not a big problem. But now it’s two key taps.</p>
+
+  <h2>what it does</h2>
+  <ul>
+    <li>Double‑tap left <kbd>⌥</kbd> (or press <kbd>⌥⌘L</kbd>, or any shortcut you set) and a small black panel drops out of the notch.</li>
+    <li>It shows the current line big, with the previous and next lines dimmed, synced to the song.</li>
+    <li>It never takes focus, so you can keep typing while it’s open.</li>
+    <li>It stays until you tap again, or hides by itself after a few seconds if you prefer. You can also pin it.</li>
+    <li>No notch? It shows up at the top of the screen instead.</li>
+    <li>Lyrics come from <a href="https://lrclib.net">LRCLIB</a>. Only the song’s title, artist, album and length are sent. No account, no analytics.</li>
+  </ul>
+
+  <h2>install</h2>
+  <p class="muted">Needs macOS 14 or later, the Spotify desktop app, and Xcode 16+ to build it. There’s no prebuilt download yet.</p>
+  <ol>
+    <li>Build it:
+<pre><code>git clone https://github.com/okaynils/notchjam.git
+cd notchjam
+xcodebuild -project notchjam.xcodeproj -scheme notchjam \
+  -configuration Release -derivedDataPath build \
+  CODE_SIGN_IDENTITY=- build</code></pre></li>
+    <li>Move it to Applications and open it:
+<pre><code>cp -R build/Build/Products/Release/notchjam.app /Applications/
+open /Applications/notchjam.app</code></pre></li>
+    <li>Click the waveform icon in the menu bar → <b>Settings…</b> → <b>Connect</b> next to Spotify, and allow the prompt.</li>
+    <li>For the double‑tap, click <b>Allow…</b> next to Input Monitoring and switch notchjam on. It only looks at Option key timing. If you’d rather skip that, use <kbd>⌥⌘L</kbd>.</li>
+  </ol>
+  <p class="muted">If the double‑tap stops working after you rebuild, click <b>Reset</b> in Settings and allow it again. macOS forgets the permission when a self‑built app changes.</p>
+
+  <footer>Made by <a href="https://nils.me">Nils</a> · <a href="https://github.com/okaynils/notchjam">source on GitHub</a> · not affiliated with Spotify or Apple</footer>
+</main>
+
+<script>
+(() => {
+  // Original lines written for this page; no real song lyrics.
+  const lines = [
+    "Coffee’s cold but the bass is warm",
+    "Twelve tabs open, one song on",
+    "Turn it up while the build is running",
+    "Sing it like nobody’s on mute",
+    "",
+    "Hum the verse, I know the hook",
+    "Just one peek, one little look",
+    "Back to work when the chorus is through",
+    "Sing it like nobody’s on mute",
+  ];
+  const panel = document.getElementById("panel");
+  const lyrics = document.getElementById("lyrics");
+  const prev = document.getElementById("l-prev");
+  const now = document.getElementById("l-now");
+  const next = document.getElementById("l-next");
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  let visible = true;
+  const wake = [];
+  const sleep = ms => new Promise(r => setTimeout(r, ms)).then(async () => {
+    while (!visible || document.hidden) await new Promise(r => wake.push(r));
+  });
+  const resume = () => { while (wake.length) wake.shift()(); };
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) resume(); })
+    .observe(panel.closest(".stage"));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) resume(); });
+
+  const show = i => {
+    const at = j => (j >= 0 && j < lines.length ? lines[j] : "");
+    prev.textContent = at(i - 1) || "\u00a0";
+    now.textContent = at(i) || "♪";
+    next.textContent = at(i + 1) || "\u00a0";
+  };
+  const advance = async i => {
+    if (reduced || !lyrics.animate) { show(i); return; }
+    await lyrics.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, fill: "forwards" }).finished;
+    show(i);
+    lyrics.animate([{ opacity: 0, transform: "translateY(7px)" }, { opacity: 1, transform: "none" }],
+                   { duration: 260, easing: "ease-out", fill: "forwards" });
+  };
+
+  if (reduced) {
+    panel.classList.add("open");
+    show(3);
+    (async () => { for (let i = 0; ; i = (i + 1) % lines.length) { await sleep(3200); await advance(i); } })();
+    return;
+  }
+
+  (async () => {
+    let start = 0;
+    for (;;) {
+      await sleep(1300);
+      show(start);
+      panel.classList.add("open");
+      for (let k = 1; k <= 4; k++) {
+        await sleep(2100);
+        await advance(start + k);
+      }
+      await sleep(2200);
+      panel.classList.remove("open");
+      start = (start + 5) % lines.length;
+      await sleep(700);
+    }
+  })();
+})();
+</script>
+</body>
+</html>
